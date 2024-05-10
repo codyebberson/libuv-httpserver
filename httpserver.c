@@ -96,15 +96,6 @@ void read_cb(uv_stream_t *handle, ssize_t nread, const uv_buf_t *buf)
   }
   else
   {
-    if (nread == UV_EOF)
-    {
-      // do nothing
-    }
-    else
-    {
-      printf("read: %s\n", uv_strerror(nread));
-    }
-
     uv_shutdown_t *shutdown_req = malloc(sizeof(uv_shutdown_t));
     r = uv_shutdown(shutdown_req, handle, shutdown_cb);
     ASSERT(r == 0);
@@ -114,7 +105,6 @@ void read_cb(uv_stream_t *handle, ssize_t nread, const uv_buf_t *buf)
 
 void write_cb(uv_write_t *write_req, int status)
 {
-  uv_close((uv_handle_t *)write_req->handle, close_cb);
   free(write_req);
 }
 
@@ -124,7 +114,7 @@ int headers_complete_cb(http_parser *parser)
   client_t *client = (client_t *)parser->data;
 
   uv_write_t *write_req = malloc(sizeof(uv_write_t));
-  uv_buf_t buf = uv_buf_init(RESPONSE, sizeof(RESPONSE));
+  uv_buf_t buf = uv_buf_init(RESPONSE, sizeof(RESPONSE) - 1);
   int r = uv_write(write_req, (uv_stream_t *)&client->handle, &buf, 1, write_cb);
   ASSERT(r == 0);
 
@@ -146,6 +136,8 @@ void server_init(uv_loop_t *loop)
 
   r = uv_listen((uv_stream_t *)&server, BACKLOG, connection_cb);
   ASSERT(r == 0);
+
+  printf("Listening on port %d\n", PORT);
 }
 
 int main()
